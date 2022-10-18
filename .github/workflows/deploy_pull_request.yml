@@ -8,6 +8,7 @@ jobs:
   deploy-pr:
     name: Deploy PR
     runs-on: ubuntu-latest
+    timeout-minutes: 7
     steps:
       - name: Checkout
         uses: actions/checkout@v2
