@@ -17,5 +17,6 @@ locals {
   #  AWS Cognito always need a parent domain. It's not possible to do this using unique workspace domain name
   root_auth_domain_name = "${local.environment}.${local.service}.${local.project_domain}"
   auth_domain_name = "${local.environment}.${local.environment}.${local.service}.${local.project_domain}"
+  dev_auth_domain_name = local.environment
 }
 
