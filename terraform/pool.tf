@@ -50,9 +50,9 @@ output "aws_cognito_user_pool_id" {
 output "aws_cognito_user_pool_endpoint" {
   value = aws_cognito_user_pool.pool.endpoint
 }
-
-resource "aws_cognito_user_pool_domain" "user_pool_domain_name" {
-  domain          = local.auth_domain_name
-  user_pool_id    = aws_cognito_user_pool.pool.id
-  certificate_arn = aws_acm_certificate.auth_domain_certificate.arn
-}
+#
+#resource "aws_cognito_user_pool_domain" "user_pool_domain_name" {
+#  domain          = local.auth_domain_name
+#  user_pool_id    = aws_cognito_user_pool.pool.id
+#  certificate_arn = aws_acm_certificate.auth_domain_certificate.arn
+#}

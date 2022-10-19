@@ -1,5 +1,5 @@
 data "aws_route53_zone" "project_hosted_zone" {
-  name = local.root_domain_name
+  name = local.project_domain
 }
 
 resource "aws_acm_certificate" "auth_domain_certificate" {
@@ -13,29 +13,30 @@ resource "aws_acm_certificate" "auth_domain_certificate" {
   }
 }
 
+locals {
+  cloud_front_hosted_zone_id = "Z2FDTNDATAQYW2" // It never changes
+}
+
+# AWS Cognito needs a root record that is reachable. We just use a dummy IP address
 resource "aws_route53_record" "auth_root_domain_dummy" {
   zone_id = data.aws_route53_zone.project_hosted_zone.zone_id
   name    = local.root_auth_domain_name
   type    = "A"
   ttl     = 300
-  records = ["127.0.0.1"]  # Placeholder that is never used
+  records = ["127.0.0.1"]  # Placeholder that is never used. See: https://stackoverflow.com/a/56429359/3943054
 }
 
-locals {
-  cloud_front_hosted_zone_id = "Z2FDTNDATAQYW2" // It never changes
-}
-
-resource "aws_route53_record" "auth_domain_name" {
-  zone_id = data.aws_route53_zone.project_hosted_zone.zone_id
-  name    = aws_cognito_user_pool_domain.user_pool_domain_name.domain
-
-  type = "A"
-  alias {
-    evaluate_target_health = false
-    name                   = aws_cognito_user_pool_domain.user_pool_domain_name.cloudfront_distribution_arn
-    zone_id                = local.cloud_front_hosted_zone_id
-  }
-}
+#resource "aws_route53_record" "auth_domain_name" {
+#  zone_id = data.aws_route53_zone.project_hosted_zone.zone_id
+#  name    = aws_cognito_user_pool_domain.user_pool_domain_name.domain
+#
+#  type = "A"
+#  alias {
+#    evaluate_target_health = false
+#    name                   = aws_cognito_user_pool_domain.user_pool_domain_name.cloudfront_distribution_arn
+#    zone_id                = local.cloud_front_hosted_zone_id
+#  }
+#}
 
 resource "aws_route53_record" "dns_validation" {
   for_each = {

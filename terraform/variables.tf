@@ -8,10 +8,14 @@ locals {
   service     = "auth"
   name_prefix = "${local.project}-${local.service}-${local.environment}"
 }
+locals {
+  project_domain = "vajeh.artronics.me.uk"
+}
 
 locals {
-  root_domain_name      = "vajeh.artronics.me.uk"
-  domain_name           = "${local.environment}.${local.service}.${local.root_domain_name}"
-  root_auth_domain_name = "${local.service}.${local.root_domain_name}"
-  auth_domain_name      = local.domain_name
+  #  Cognito needs a root domain which is created in infra. see: https://stackoverflow.com/a/56429359/3943054
+  #  AWS Cognito always need a parent domain. It's not possible to do this using unique workspace domain name
+  root_auth_domain_name = "${local.environment}.${local.service}.${local.project_domain}"
+  auth_domain_name = "${local.environment}.${local.environment}.${local.service}.${local.project_domain}"
 }
+
