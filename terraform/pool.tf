@@ -38,6 +38,17 @@ data "aws_cognito_user_pool_clients" "main" {
   user_pool_id = aws_cognito_user_pool.pool.id
 }
 
+data "aws_secretsmanager_secret" "testuser1" {
+  name = "vajeh/auth/dev/testuser/testuser1"
+}
+
+resource "aws_cognito_user" "test_users" {
+  user_pool_id = aws_cognito_user_pool.pool.id
+  username     = "testuser1"
+  password = data.aws_secretsmanager_secret.testuser1
+  count = local.environment == "dev" ? 1 : 0
+}
+
 // Used for adding audiences for the api in front of the backend
 output "user_pool_client_ids" {
   value = data.aws_cognito_user_pool_clients.main.client_ids
