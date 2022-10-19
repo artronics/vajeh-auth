@@ -42,11 +42,20 @@ data "aws_secretsmanager_secret" "testuser1" {
   name = "vajeh/auth/dev/testuser/testuser1"
 }
 
+locals {
+  testuser1 = "testuser1-${local.environment}@${local.project_domain}"
+}
 resource "aws_cognito_user" "test_users" {
   user_pool_id = aws_cognito_user_pool.pool.id
-  username     = "testuser1-${local.environment}@${local.project_domain}"
-  password = data.aws_secretsmanager_secret.testuser1.id
-  enabled = true
+  username     = local.testuser1
+  password     = data.aws_secretsmanager_secret.testuser1.id
+  enabled      = true
+  #  attributes must match with the schema.
+  #  If not terraform detects as change and tries to recreate user each deployment. see: https://stackoverflow.com/a/56466168/3943054
+  attributes   = {
+    email          = local.testuser1
+    email_verified = true
+  }
 }
 
 // Used for adding audiences for the api in front of the backend
@@ -59,9 +68,9 @@ output "aws_cognito_user_pool_id" {
 }
 
 resource "aws_cognito_user_pool_domain" "user_pool_domain_name" {
-  domain          = "${local.project}-${local.dev_auth_domain_name}"
-  user_pool_id    = aws_cognito_user_pool.pool.id
+  domain       = "${local.project}-${local.dev_auth_domain_name}"
+  user_pool_id = aws_cognito_user_pool.pool.id
 
   # FIXME: for prod it should be custom domain
-#  certificate_arn = aws_acm_certificate.auth_domain_certificate.arn
+  #  certificate_arn = aws_acm_certificate.auth_domain_certificate.arn
 }
