@@ -44,11 +44,9 @@ data "aws_secretsmanager_secret" "testuser1" {
 
 resource "aws_cognito_user" "test_users" {
   user_pool_id = aws_cognito_user_pool.pool.id
-  username     = "testuser1@${local.project_domain}"
+  username     = "testuser1-${local.environment}@${local.project_domain}"
   password = data.aws_secretsmanager_secret.testuser1.id
   enabled = true
-
-  count = local.environment == "dev" ? 1 : 0
 }
 
 // Used for adding audiences for the api in front of the backend
