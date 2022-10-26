@@ -42,13 +42,19 @@ data "aws_secretsmanager_secret" "testuser1" {
   name = "vajeh/auth/dev/testuser/testuser1"
 }
 
-locals {
-  testuser1 = "testuser1-${local.environment}@${local.project_domain}"
+data "aws_secretsmanager_secret_version" "testuser1_password" {
+  secret_id = data.aws_secretsmanager_secret.testuser1.id
 }
+
+locals {
+  testuser1          = "testuser1-${local.environment}@${local.project_domain}"
+  testuser1_password = data.aws_secretsmanager_secret_version.testuser1_password.secret_string
+}
+
 resource "aws_cognito_user" "test_users" {
   user_pool_id = aws_cognito_user_pool.pool.id
   username     = local.testuser1
-  password     = data.aws_secretsmanager_secret.testuser1.id
+  password     = local.testuser1_password
   enabled      = true
   #  attributes must match with the schema.
   #  If not terraform detects as change and tries to recreate user each deployment. see: https://stackoverflow.com/a/56466168/3943054
