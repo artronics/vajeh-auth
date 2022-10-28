@@ -38,33 +38,17 @@ data "aws_cognito_user_pool_clients" "main" {
   user_pool_id = aws_cognito_user_pool.pool.id
 }
 
-data "aws_secretsmanager_secret" "testuser1" {
-  name = "vajeh/auth/dev/testuser/testuser1"
-}
-
-data "aws_secretsmanager_secret_version" "testuser1_password" {
-  secret_id = data.aws_secretsmanager_secret.testuser1.id
-}
-
 locals {
-  testuser1          = "testuser1-${local.environment}@${local.project_domain}"
-  testuser1_password = data.aws_secretsmanager_secret_version.testuser1_password.secret_string
-}
-
-resource "aws_cognito_user" "test_users" {
-  user_pool_id = aws_cognito_user_pool.pool.id
-  username     = local.testuser1
-  password     = local.testuser1_password
-  enabled      = true
-  #  attributes must match with the schema.
-  #  If not terraform detects as change and tries to recreate user each deployment. see: https://stackoverflow.com/a/56466168/3943054
-  attributes   = {
-    email          = local.testuser1
-    email_verified = true
-  }
+  user_groups = ["User"]
 }
 
 // Used for adding audiences for the api in front of the backend
+resource "aws_cognito_user_group" "user_group" {
+  count = length(local.user_groups)
+  name         = local.user_groups[count.index]
+  user_pool_id = aws_cognito_user_pool.pool.id
+}
+
 output "user_pool_client_ids" {
   value = data.aws_cognito_user_pool_clients.main.client_ids
 }

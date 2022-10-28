@@ -5,7 +5,12 @@ tf := docker run --rm -it $(aws_cred) -v $(shell pwd):/app
 
 ws = jaho
 
+.SILENT:
+
 terraform-deploy:
-	  $(tf) terraform-flow --path=/app/terraform --workspace=$(ws) --options="" --dryrun=false --destroy=false --destroy-workspace=false
+	  $(tf) artronics/terraform-flow --path=/app/terraform --workspace=$(ws) --options="" --dryrun=false --destroy=false --destroy-workspace=false
 terraform-destroy:
-	  $(tf) terraform-flow --path=/app/terraform --workspace=$(ws) --options="" --dryrun=false --destroy=true --destroy-workspace=false
+	  $(tf) artronics/terraform-flow --path=/app/terraform --workspace=$(ws) --options="" --dryrun=false --destroy=true --destroy-workspace=false
+
+tf-apply:
+	terraform -chdir=terraform apply -auto-approve

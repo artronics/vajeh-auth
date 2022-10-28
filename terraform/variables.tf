@@ -8,6 +8,11 @@ locals {
   service     = "auth"
   name_prefix = "${local.project}-${local.service}-${local.environment}"
 }
+
+locals {
+  is_prod = local.environment == "prod"
+}
+
 locals {
   project_domain = "vajeh.artronics.me.uk"
 }
