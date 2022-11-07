@@ -5,4 +5,3 @@ output "user_pool_id" {
 output "user_pool_endpoint" {
   value = aws_cognito_user_pool.pool.endpoint
 }
-
