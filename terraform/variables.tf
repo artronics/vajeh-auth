@@ -10,7 +10,6 @@ locals {
 }
 
 locals {
-  is_prod = local.environment == "prod"
 }
 
 locals {
