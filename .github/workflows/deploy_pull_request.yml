@@ -21,7 +21,7 @@ jobs:
 
       - name: Download tools
         run: |
-          curl -LOs https://github.com/artronics/vajeh-cli/releases/latest/download/vajeh-cli --output vajeh
+          curl -Ls https://github.com/artronics/vajeh-cli/releases/latest/download/vajeh-cli --output vajeh
           chmod +x vajeh
 
       - name: Deploy PR
