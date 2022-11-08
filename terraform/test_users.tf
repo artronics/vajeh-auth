@@ -1,5 +1,6 @@
 data "aws_secretsmanager_secret" "testuser1" {
-  name = "${local.project}/${local.service}/${local.is_prod ? "prod" : "nonprod"}/testuser/password"
+  // TODO /password in other region takes 7 days to be deleted. It's named password2. Change it back to password when the previous one is deleted
+  name = "${local.project}/${local.service}/${local.is_live ? "live" : "ptl"}/testuser/password3"
 }
 
 data "aws_secretsmanager_secret_version" "testuser1_password" {

@@ -10,10 +10,6 @@ locals {
 }
 
 locals {
-  is_prod = local.environment == "prod"
-}
-
-locals {
   project_domain = "vajeh.artronics.me.uk"
 }
 

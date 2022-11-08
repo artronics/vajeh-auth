@@ -21,7 +21,7 @@ resource "aws_cognito_user_pool" "pool" {
 
   verification_message_template {
     default_email_option = "CONFIRM_WITH_LINK"
-    email_subject        = "Pawnflow - Verify you email"
+    email_subject        = "Vajeh - Verify you email"
   }
 
   password_policy {
