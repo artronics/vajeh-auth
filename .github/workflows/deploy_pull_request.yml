@@ -29,5 +29,5 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         run: |
-          ./vajeh deploy --workspace pr_${{ github.event.pull_request.number }} --workdir terraform
+          ./vajeh deploy --workspace pr${{ github.event.pull_request.number }} --workdir terraform
 

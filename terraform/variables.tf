@@ -10,9 +10,6 @@ locals {
 }
 
 locals {
-}
-
-locals {
   project_domain = "vajeh.artronics.me.uk"
 }
 

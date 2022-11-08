@@ -15,12 +15,14 @@ terraform {
 
 locals {
   non_user_envs = ["dev", "prod"]
-  ws = local.environment
+  ws            = local.environment
 
-  is_live = local.environment == "prod"
-  is_pr = can(regex("pr_\\d+", local.ws))
-  is_user_env = local.ws != "dev" && local.ws != "prod" && !local.is_pr
-  environment_tag = local.is_user_env ? "user_${local.ws}" : local.ws
+  is_live         = local.environment == "prod"
+  is_pr           = can(regex("pr\\d+", local.ws))
+  pr_no           = trimprefix("pr", local.ws)
+  is_user_env     = local.ws != "dev" && local.ws != "prod" && !local.is_pr
+
+  environment_tag = local.is_user_env ? "user_${local.ws}" : local.is_pr ? "pr_${local.pr_no}" : local.ws
 }
 
 provider "aws" {
