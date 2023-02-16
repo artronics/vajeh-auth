@@ -4,6 +4,8 @@ import subprocess
 from invoke import task
 
 ENV_FILE = ".env"
+PERSISTENT_WORKSPACES = ["dev", "prod"]
+ROOT_ZONE = "vajeh.co.uk"
 
 
 def read_kvm():
@@ -23,14 +25,31 @@ kvm = read_kvm()
 # .env kvm will overwrite environment variables
 os.environ.update(kvm)
 
+ACCOUNT = "ptl" if kvm['ENVIRONMENT'] != "prod" else "prod"
+
 
 def get_state_s3_name():
     prj = kvm['PROJECT']
-    account = "ptl" if kvm['ENVIRONMENT'] != "prod" else "prod"
-    return f"{prj}-{account}-terraform-state"
+    return f"{prj}-{ACCOUNT}-terraform-state"
 
 
 TERRAFORM_STATE_S3 = get_state_s3_name()
+
+
+def get_tf_vars(ws):
+    workspace_tag = ws
+    if ws not in PERSISTENT_WORKSPACES and not ws.startswith("pr_"):
+        workspace_tag = f"user_{ws}"
+
+    account_zone = f"{ACCOUNT}.{ROOT_ZONE}"
+
+    all_vars = {"project": kvm["PROJECT"], "workspace_tag": workspace_tag, "account_zone": account_zone}
+
+    tf_vars = ""
+    for k, v in all_vars.items():
+        tf_vars += f"-var=\"{k}={v}\" "
+
+    return tf_vars
 
 
 def parse_workspace_list(output):
@@ -77,9 +96,23 @@ def init(c, dir=kvm["TERRAFORM_DIR"]):
 
 @task(workspace)
 def plan(c, dir=kvm["TERRAFORM_DIR"]):
-    c.run(f"terraform -chdir={dir} plan")
+    (_, ws) = get_terraform_workspaces(dir)
+    tf_vars = get_tf_vars(ws)
+    c.run(f"terraform -chdir={dir} plan {tf_vars}")
 
 
 @task(workspace)
 def apply(c, dir=kvm["TERRAFORM_DIR"]):
-    c.run(f"terraform -chdir={dir} apply")
+    (_, ws) = get_terraform_workspaces(dir)
+    tf_vars = get_tf_vars(ws)
+    c.run(f"terraform -chdir={dir} apply {tf_vars} -auto-approve")
+
+
+@task(workspace)
+def destroy(c, dir=kvm["TERRAFORM_DIR"], dryrun=True):
+    (_, ws) = get_terraform_workspaces(dir)
+    tf_vars = get_tf_vars(ws)
+    if dryrun:
+        c.run(f"terraform -chdir={dir} plan {tf_vars} -destroy")
+    else:
+        c.run(f"terraform -chdir={dir} destroy {tf_vars} -auto-approve")

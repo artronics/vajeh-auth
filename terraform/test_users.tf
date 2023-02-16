@@ -1,6 +1,5 @@
 data "aws_secretsmanager_secret" "testuser1" {
-  // TODO /password in other region takes 7 days to be deleted. It's named password2. Change it back to password when the previous one is deleted
-  name = "${local.project}/${local.service}/${local.is_live ? "live" : "ptl"}/testuser/password3"
+  name = "${local.secret_prefix}/testuser/password"
 }
 
 data "aws_secretsmanager_secret_version" "testuser1_password" {
@@ -8,7 +7,7 @@ data "aws_secretsmanager_secret_version" "testuser1_password" {
 }
 
 locals {
-  testuser1_email          = "testuser1-${local.environment}@${local.project_domain}"
+  testuser1_email    = "testuser1-${local.workspace}@${var.account_zone}"
   testuser1_password = data.aws_secretsmanager_secret_version.testuser1_password.secret_string
 }
 
@@ -19,7 +18,7 @@ resource "aws_cognito_user" "test_users" {
   enabled      = true
   #  attributes must match with the schema.
   #  If not terraform detects as change and tries to recreate user each deployment. see: https://stackoverflow.com/a/56466168/3943054
-  attributes   = {
+  attributes = {
     email          = local.testuser1_email
     email_verified = true
   }
