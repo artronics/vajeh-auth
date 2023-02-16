@@ -1,4 +1,5 @@
 import os
+import subprocess
 
 from invoke import task
 
@@ -23,21 +24,62 @@ kvm = read_kvm()
 os.environ.update(kvm)
 
 
-def get_value(k) -> str:
-    if k in kvm:
-        return kvm[k]
-    elif os.environ.get(k):
-        return os.environ[k]
-    else:
-        print(f"Can not find {k} in either .env file or environment variable")
+def get_state_s3_name():
+    prj = kvm['PROJECT']
+    account = "ptl" if kvm['ENVIRONMENT'] != "prod" else "prod"
+    return f"{prj}-{account}-terraform-state"
 
 
-@task
-def init(c):
-    c.run("terraform -chdir=terraform init")
+TERRAFORM_STATE_S3 = get_state_s3_name()
 
 
-if __name__ == '__main__':
-    print(kvm)
-    # print(get_value("WORKSPACEs"))
-    print(os.environ["WORKSPACE"])
+def parse_workspace_list(output):
+    workspaces = []
+    current_ws = None
+    for ws in output.split("\n"):
+        _ws = ws.strip()
+        if _ws.startswith("*"):
+            current_ws = _ws.lstrip("*").strip()
+            workspaces.append(current_ws)
+        elif _ws != "":
+            workspaces.append(_ws)
+    return workspaces, current_ws
+
+
+def get_terraform_workspaces(_dir) -> (list[str], str):
+    s = subprocess.check_output(["terraform", f"-chdir={_dir}", "workspace", "list"])
+    return parse_workspace_list(s.decode("utf-8"))
+
+
+def switch_workspace(_dir, ws):
+    subprocess.run(["terraform", f"-chdir={_dir}", "workspace", "select", ws])
+
+
+def create_workspace(_dir, ws):
+    subprocess.run(["terraform", f"-chdir={_dir}", "workspace", "new", ws])
+
+
+@task(help={"dir": "Directory where terraform files are located. Set default via TERRAFORM_DIR in env var or .env file",
+            "ws": "Terraform workspace. Set default via WORKSPACE in env var or .env file"})
+def workspace(c, dir=kvm["TERRAFORM_DIR"], ws=kvm["WORKSPACE"]):
+    (wss, current_ws) = get_terraform_workspaces(dir)
+    if ws not in wss:
+        create_workspace(dir, ws)
+    elif ws != current_ws:
+        switch_workspace(dir, ws)
+
+
+@task(help={"dir": "Directory where terraform files are located. "
+                   "Set default via TERRAFORM_DIR in env var or .env file"})
+def init(c, dir=kvm["TERRAFORM_DIR"]):
+    c.run(f"terraform -chdir={dir} init -backend-config=\"bucket={TERRAFORM_STATE_S3}\"")
+
+
+@task(workspace)
+def plan(c, dir=kvm["TERRAFORM_DIR"]):
+    c.run(f"terraform -chdir={dir} plan")
+
+
+@task(workspace)
+def apply(c, dir=kvm["TERRAFORM_DIR"]):
+    c.run(f"terraform -chdir={dir} apply")

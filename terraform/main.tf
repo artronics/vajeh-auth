@@ -7,8 +7,7 @@ terraform {
   }
 
   backend "s3" {
-    bucket = "vajeh-auth-terraform-state"
-    key    = "dev/app"
+    key    = "state"
     region = "eu-west-2"
   }
 }
