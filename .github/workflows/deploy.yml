@@ -8,40 +8,30 @@ on:
 jobs:
   deploy:
     name: Deploy
+    environment: dev
     runs-on: ubuntu-latest
-    timeout-minutes: 7
+    env:
+      PROJECT: vajeh-auth
+      WORKSPACE: dev
     steps:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - uses: actions/setup-node@v3
+      - name: Install invoke
+        run: pip install invoke
+
+      - name: Deploy - init
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: invoke init
+
+      - name: Deploy - apply
+        uses: nick-fields/retry@v2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         with:
-          cache: 'yarn'
-          node-version: 16
-
-      - name: Cache node modules
-        uses: actions/cache@v3
-        with:
-          path: node_modules
-          key: node_modules-${{ hashFiles('yarn.lock') }}
-
-      - name: Cache terraform
-        uses: actions/cache@v3
-        with:
-          key: terraform-${{ hashFiles('terraform/.terraform.lock.hcl') }}
-          path: terraform/.terraform
-
-      - name: Install dependencies
-        run: yarn install
-
-#      - name: Build
-#        run: yarn run build
-
-      - name: Deploy dev
-        uses: artronics/terraform-flow-action@v1
-        with:
-          workspace: dev
-          path: terraform
-          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-
+          timeout_minutes: 10
+          max_attempts: 2
+          command: invoke apply

@@ -1,19 +1,27 @@
-include .env
+# Add logic to tasks.py. This file is only for ease of running when using IDEs and editors
 
-ws = $(SHORT_USERNAME)
+BUILDDIR = build
 
-.SILENT:
+init:
+	invoke init
 
-tf_env = AWS_ACCESS_KEY_ID=$(AWS_ACCESS_KEY_ID) AWS_SECRET_ACCESS_KEY=$(AWS_SECRET_ACCESS_KEY)
-
-tf_cmd = $(tf_env) terraform -chdir=terraform
-
-tf-init:
-	$(tf_cmd) init -backend-config="key=state"
-apply:
-	vajeh deploy --workspace $(ws)
 plan:
-	vajeh deploy --dryrun --workspace $(ws)
-destroy:
-	vajeh deploy --destroy --workspace $(ws)
+	invoke plan
 
+apply:
+	invoke apply
+
+destroy-plan:
+	invoke destroy
+
+destroy:
+	invoke destroy --no-dryrun
+
+output:
+	invoke output
+
+clean:
+	rm -rf build terraform/.terraform
+
+$(BUILDDIR):
+	mkdir $(BUILDDIR)
