@@ -1,5 +1,6 @@
 import os
 import subprocess
+from pathlib import Path
 
 from invoke import task
 
@@ -7,23 +8,36 @@ ENV_FILE = ".env"
 PERSISTENT_WORKSPACES = ["dev", "prod"]
 ROOT_ZONE = "vajeh.co.uk"
 
+default_kvm = {
+    "PROJECT": os.getenv("PROJECT", Path(os.getcwd()).stem),
+    "ENVIRONMENT": os.getenv("ENVIRONMENT", "dev"),
+    "WORKSPACE": os.getenv("WORKSPACE", "dev"),
+    "TERRAFORM_DIR": os.getenv("TERRAFORM_DIR", "terraform"),
+    "AWS_ACCESS_KEY_ID": os.getenv("AWS_ACCESS_KEY_ID", ""),
+    "AWS_SECRET_ACCESS_KEY": os.getenv("AWS_SECRET_ACCESS_KEY", ""),
+}
 
-def read_kvm():
+
+def update_kvm():
     try:
         with open(ENV_FILE) as f:
             kv = {k.strip(): v.strip() for k, v in (line.split('=') for line in f if line.strip())}
-            return kv
     except ValueError:
         print("Parse error. Format file like key=value")
         exit(1)
     except FileNotFoundError:
-        print("Environment file not found. Create .env file by renaming example.env file")
-        exit(1)
+        print("Environment file not found. Using only default values and environment variables.")
+        return default_kvm
+    return default_kvm | kv
 
 
-kvm = read_kvm()
+kvm = update_kvm()
 # .env kvm will overwrite environment variables
 os.environ.update(kvm)
+# DO NOT print the whole kvm. There are secrets in there
+print("Settings:")
+print(
+    f"PROJECT: {kvm['PROJECT']}\nENVIRONMENT: {kvm['ENVIRONMENT']}\nWORKSPACE: {kvm['WORKSPACE']}\nTERRAFORM_DIR: {kvm['TERRAFORM_DIR']}\n")
 
 ACCOUNT = "ptl" if kvm['ENVIRONMENT'] != "prod" else "prod"
 
@@ -38,8 +52,8 @@ TERRAFORM_STATE_S3 = get_state_s3_name()
 
 def get_tf_vars(ws):
     workspace_tag = ws
-    if ws not in PERSISTENT_WORKSPACES and not ws.startswith("pr_"):
-        workspace_tag = f"user_{ws}"
+    if ws not in PERSISTENT_WORKSPACES and not ws.startswith("pr-"):
+        workspace_tag = f"user-{ws}"
 
     account_zone = f"{ACCOUNT}.{ROOT_ZONE}"
 
@@ -78,6 +92,14 @@ def create_workspace(_dir, ws):
     subprocess.run(["terraform", f"-chdir={_dir}", "workspace", "new", ws])
 
 
+def delete_workspace(_dir, ws):
+    (_, current) = get_terraform_workspaces(_dir)
+    if ws == "default" or current == "default":
+        return
+    switch_workspace(_dir, "default")
+    subprocess.run(["terraform", f"-chdir={_dir}", "workspace", "delete", ws])
+
+
 @task(help={"dir": "Directory where terraform files are located. Set default via TERRAFORM_DIR in env var or .env file",
             "ws": "Terraform workspace. Set default via WORKSPACE in env var or .env file"})
 def workspace(c, dir=kvm["TERRAFORM_DIR"], ws=kvm["WORKSPACE"]):
@@ -91,21 +113,21 @@ def workspace(c, dir=kvm["TERRAFORM_DIR"], ws=kvm["WORKSPACE"]):
 @task(help={"dir": "Directory where terraform files are located. "
                    "Set default via TERRAFORM_DIR in env var or .env file"})
 def init(c, dir=kvm["TERRAFORM_DIR"]):
-    c.run(f"terraform -chdir={dir} init -backend-config=\"bucket={TERRAFORM_STATE_S3}\"")
+    c.run(f"terraform -chdir={dir} init -backend-config=\"bucket={TERRAFORM_STATE_S3}\"", in_stream=False)
 
 
 @task(workspace)
 def plan(c, dir=kvm["TERRAFORM_DIR"]):
     (_, ws) = get_terraform_workspaces(dir)
     tf_vars = get_tf_vars(ws)
-    c.run(f"terraform -chdir={dir} plan {tf_vars}")
+    c.run(f"terraform -chdir={dir} plan {tf_vars}", in_stream=False)
 
 
 @task(workspace)
 def apply(c, dir=kvm["TERRAFORM_DIR"]):
     (_, ws) = get_terraform_workspaces(dir)
     tf_vars = get_tf_vars(ws)
-    c.run(f"terraform -chdir={dir} apply {tf_vars} -auto-approve")
+    c.run(f"terraform -chdir={dir} apply {tf_vars} -auto-approve", in_stream=False)
 
 
 @task(workspace)
@@ -113,6 +135,13 @@ def destroy(c, dir=kvm["TERRAFORM_DIR"], dryrun=True):
     (_, ws) = get_terraform_workspaces(dir)
     tf_vars = get_tf_vars(ws)
     if dryrun:
-        c.run(f"terraform -chdir={dir} plan {tf_vars} -destroy")
+        c.run(f"terraform -chdir={dir} plan {tf_vars} -destroy", in_stream=False)
     else:
-        c.run(f"terraform -chdir={dir} destroy {tf_vars} -auto-approve")
+        c.run(f"terraform -chdir={dir} destroy {tf_vars} -auto-approve", in_stream=False)
+        delete_workspace(dir, ws)
+
+
+@task(workspace)
+def output(c, dir=kvm["TERRAFORM_DIR"]):
+    c.run("mkdir -p build", in_stream=False)
+    c.run(f"terraform -chdir={dir} output -json", in_stream=False)

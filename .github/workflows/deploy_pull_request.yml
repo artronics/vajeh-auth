@@ -8,26 +8,29 @@ jobs:
   deploy-pr:
     name: Deploy PR
     runs-on: ubuntu-latest
-    timeout-minutes: 7
+    environment: dev
+    env:
+      PROJECT: vajeh-auth
+      WORKSPACE: pr-${{ github.event.pull_request.number }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Cache terraform
-        uses: actions/cache@v3
-        with:
-          key: terraform-${{ hashFiles('terraform/.terraform.lock.hcl') }}
-          path: terraform/.terraform
+      - name: Install invoke
+        run: pip install invoke
 
-      - name: Download tools
-        run: |
-          curl -Ls https://github.com/artronics/vajeh-cli/releases/latest/download/vajeh-cli --output vajeh
-          chmod +x vajeh
-
-      - name: Deploy PR
+      - name: Deploy PR - init
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        run: |
-          ./vajeh deploy --workspace pr${{ github.event.pull_request.number }} --workdir terraform
+        run: invoke init
 
+      - name: Deploy PR - apply
+        uses: nick-fields/retry@v2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        with:
+          timeout_minutes: 10
+          max_attempts: 2
+          command: invoke apply
