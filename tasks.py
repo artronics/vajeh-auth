@@ -114,6 +114,7 @@ def workspace(c, dir=kvm["TERRAFORM_DIR"], ws=kvm["WORKSPACE"]):
                    "Set default via TERRAFORM_DIR in env var or .env file"})
 def init(c, dir=kvm["TERRAFORM_DIR"]):
     c.run(f"terraform -chdir={dir} init -backend-config=\"bucket={TERRAFORM_STATE_S3}\"", in_stream=False)
+    print("DO NOT FORGET to run `provider-lock` task if, you added new provider/plugin.")
 
 
 @task(workspace)
