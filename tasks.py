@@ -145,3 +145,11 @@ def destroy(c, dir=kvm["TERRAFORM_DIR"], dryrun=True):
 def output(c, dir=kvm["TERRAFORM_DIR"]):
     c.run("mkdir -p build", in_stream=False)
     c.run(f"terraform -chdir={dir} output -json", in_stream=False)
+
+
+@task(workspace)
+def lock_provider(c, dir=kvm["TERRAFORM_DIR"]):
+    print("This will take a while. Be patient!")
+    c.run(f"terraform -chdir={dir} providers lock "
+          f"-platform=darwin_arm64 -platform=darwin_amd64 -platform=linux_amd64 -platform=windows_amd64",
+          in_stream=False)

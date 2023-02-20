@@ -20,6 +20,9 @@ destroy:
 output:
 	invoke output
 
+lock-provider:
+	invoke lock-provider
+
 clean:
 	rm -rf build terraform/.terraform
 
