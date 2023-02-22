@@ -16,7 +16,7 @@ def load_project_conf():
     def get_param(k, default):
         return os.getenv(k, public_conf.get(k, default))
 
-    c = {
+    conf = {
         "PROJECT": get_param("PROJECT", Path(os.getcwd()).stem),
         "ENVIRONMENT": get_param("ENVIRONMENT", "dev"),
         "WORKSPACE": get_param("WORKSPACE", "dev"),
@@ -28,13 +28,13 @@ def load_project_conf():
     try:
         with open(f"{os.getcwd()}/project.private.env.json", 'r') as private_conf_file:
             private_conf = json.load(private_conf_file)
-            return c | private_conf
+            return conf | private_conf
 
     except FileNotFoundError:
         print(
             "Private environment file not found. "
             "Using only default values and environment variables for private settings.")
-        return c
+        return conf
 
 
 config = load_project_conf()

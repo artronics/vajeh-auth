@@ -9,7 +9,10 @@ resource "aws_cognito_user_pool_client" "test_app" {
   prevent_user_existence_errors        = "ENABLED"
   supported_identity_providers         = ["COGNITO"]
   explicit_auth_flows                  = [
-    "ALLOW_ADMIN_USER_PASSWORD_AUTH", "ALLOW_CUSTOM_AUTH", "ALLOW_REFRESH_TOKEN_AUTH", "ALLOW_USER_SRP_AUTH"
+    "ALLOW_ADMIN_USER_PASSWORD_AUTH",
+    "ALLOW_CUSTOM_AUTH",
+    "ALLOW_REFRESH_TOKEN_AUTH",
+    "ALLOW_USER_SRP_AUTH"
   ]
 
   allowed_oauth_scopes = aws_cognito_resource_server.test_resource_server.scope_identifiers
