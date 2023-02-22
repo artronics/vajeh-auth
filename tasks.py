@@ -8,30 +8,29 @@ from invoke import task
 PERSISTENT_WORKSPACES = ["dev", "prod"]
 ROOT_ZONE = "vajeh.co.uk"
 
-default_conf = {
-    "PROJECT": os.getenv("PROJECT", Path(os.getcwd()).stem),
-    "ENVIRONMENT": os.getenv("ENVIRONMENT", "dev"),
-    "WORKSPACE": os.getenv("WORKSPACE", "dev"),
-    "TERRAFORM_DIR": os.getenv("TERRAFORM_DIR", "terraform"),
-    "AWS_ACCESS_KEY_ID": os.getenv("AWS_ACCESS_KEY_ID", ""),
-    "AWS_SECRET_ACCESS_KEY": os.getenv("AWS_SECRET_ACCESS_KEY", ""),
-}
-
 
 def load_project_conf():
     with open(f"{os.getcwd()}/project.env.json", 'r') as public_conf_file:
         public_conf = json.load(public_conf_file)
 
+    conf = {
+        "PROJECT": public_conf.get("PROJECT", os.getenv("PROJECT", Path(os.getcwd()).stem)),
+        "ENVIRONMENT": public_conf.get("ENVIRONMENT", os.getenv("ENVIRONMENT", "dev")),
+        "WORKSPACE": os.getenv("WORKSPACE", public_conf.get("WORKSPACE", "dev")),
+        "TERRAFORM_DIR": public_conf.get("TERRAFORM_DIR", os.getenv("TERRAFORM_DIR", "terraform")),
+        "AWS_ACCESS_KEY_ID": os.getenv("AWS_ACCESS_KEY_ID", ""),
+        "AWS_SECRET_ACCESS_KEY": os.getenv("AWS_SECRET_ACCESS_KEY", ""),
+    }
     try:
         with open(f"{os.getcwd()}/project.private.env.json", 'r') as private_conf_file:
             private_conf = json.load(private_conf_file)
+            return conf | private_conf
+
     except FileNotFoundError:
         print(
             "Private environment file not found. "
             "Using only default values and environment variables for private settings.")
-        private_conf = default_conf
-
-    return default_conf | public_conf | private_conf
+        return conf
 
 
 config = load_project_conf()
