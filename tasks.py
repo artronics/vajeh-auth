@@ -13,11 +13,15 @@ def load_project_conf():
     with open(f"{os.getcwd()}/project.env.json", 'r') as public_conf_file:
         public_conf = json.load(public_conf_file)
 
+    def get_param(k, default):
+        os.getenv(k, public_conf.get(k, default))
+
     conf = {
-        "PROJECT": public_conf.get("PROJECT", os.getenv("PROJECT", Path(os.getcwd()).stem)),
-        "ENVIRONMENT": public_conf.get("ENVIRONMENT", os.getenv("ENVIRONMENT", "dev")),
-        "WORKSPACE": os.getenv("WORKSPACE", public_conf.get("WORKSPACE", "dev")),
-        "TERRAFORM_DIR": public_conf.get("TERRAFORM_DIR", os.getenv("TERRAFORM_DIR", "terraform")),
+        "PROJECT": get_param("PROJECT", Path(os.getcwd()).stem),
+        "ENVIRONMENT": get_param("ENVIRONMENT", "dev"),
+        "WORKSPACE": get_param("WORKSPACE", "dev"),
+        "TERRAFORM_DIR": get_param("TERRAFORM_DIR", "terraform"),
+
         "AWS_ACCESS_KEY_ID": os.getenv("AWS_ACCESS_KEY_ID", ""),
         "AWS_SECRET_ACCESS_KEY": os.getenv("AWS_SECRET_ACCESS_KEY", ""),
     }
