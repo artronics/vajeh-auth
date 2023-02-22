@@ -1,5 +1,6 @@
 .idea
 .venv
+http/*private*
 project.private.env.json
 .env
 # dependencies
