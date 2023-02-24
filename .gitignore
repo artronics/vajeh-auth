@@ -3,6 +3,7 @@
 http/*private*
 project.private.env.json
 .env
+**/out
 # dependencies
 /node_modules
 /.pnp
