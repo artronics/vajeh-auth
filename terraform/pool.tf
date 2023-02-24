@@ -34,10 +34,6 @@ resource "aws_cognito_user_pool" "pool" {
   }
 }
 
-data "aws_cognito_user_pool_clients" "main" {
-  user_pool_id = aws_cognito_user_pool.pool.id
-}
-
 locals {
   user_groups = ["User"]
 }
@@ -47,14 +43,6 @@ resource "aws_cognito_user_group" "user_group" {
   count        = length(local.user_groups)
   name         = local.user_groups[count.index]
   user_pool_id = aws_cognito_user_pool.pool.id
-}
-
-output "user_pool_client_ids" {
-  value = data.aws_cognito_user_pool_clients.main.client_ids
-}
-
-output "aws_cognito_user_pool_id" {
-  value = aws_cognito_user_pool.pool.id
 }
 
 resource "aws_cognito_user_pool_domain" "user_pool_domain_name" {
